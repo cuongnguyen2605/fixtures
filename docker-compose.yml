@@ -1,0 +1,36 @@
+version: "3"
+
+services:
+  db:
+    image: mysql
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    environment:
+      - MYSQL_DATABASE=${DATABASE}
+      - MYSQL_ROOT_PASSWORD=${PASSWORD}
+    ports:
+      - "3306:3306"
+    volumes:
+      - dbdata:/var/lib/mysql
+
+  api:
+    image: api
+    build: .
+    env_file: .env
+    environment:
+      - DATABASE=${DATABASE}
+      - USERNAME=${USERNAME}
+      - PASSWORD=${PASSWORD}
+      - HOSTNAME=${HOSTNAME}
+      - DIALECT=${DIALECT}
+    ports:
+      - ${PORT}:${PORT}
+    restart: unless-stopped
+    depends_on:
+      - db
+    command: bash -c 'while !</dev/tcp/db/3306; do sleep 1; done; npm start'
+    volumes:
+      - .:/usr/src/app
+
+volumes:
+  dbdata:
